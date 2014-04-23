@@ -25,6 +25,7 @@
 using namespace yarp::dev;
 using namespace yarp::os;
 using namespace yarp::os::impl;
+using namespace iCub::embObj;
 
 //#warning "Macro EMS_capacityofropframeregulars defined by hand!! Find a way to have this number synchronized with EMS!!"
 #define EMS_capacityofropframeregulars 1204
@@ -71,10 +72,25 @@ static inline bool NOT_YET_IMPLEMENTED(const char *txt)
 
 static bool nv_not_found(void)
 {
-    yError () << " nv_not_found!! This may mean that this variable is not handled by this EMS\n";
+    yError () << " nv_not_found!! This may mean that this variable is not handled by this EMS";
     return false;
 }
 
+axisPositionDirectHelper::axisPositionDirectHelper(int njoints, const int *aMap, const double *angToEncs, double* _stepLimit)
+{
+    jointsNum=njoints;
+    helper = new ControlBoardHelper(njoints, aMap, angToEncs, 0, 0); //NB: zeros=0 is mandatory for this algorithm
+    maxHwStep = new double [jointsNum];
+    maxUserStep = new double [jointsNum];
+    for (int i=0; i<jointsNum; i++)
+    {
+        int    hw_i=0;
+        double hw_ang=0;
+        helper->posA2E(_stepLimit[i], i, hw_ang, hw_i);
+        maxHwStep[hw_i] = fabs(hw_ang); //NB: fabs() is mandatory for this algorithm (because angToEncs is signed)
+        maxUserStep[i] = _stepLimit[i];
+    }
+}
 
 //generic function that check is key1 is present in input bottle and that the result has size elements
 // return true/false
@@ -139,6 +155,7 @@ bool embObjMotionControl::alloc(int nj)
     _enabledPid = allocAndCheck<bool>(nj);
     _calibrated = allocAndCheck<bool>(nj);
     _cacheImpedance = allocAndCheck<eOmc_impedance_t>(nj);
+    _maxStep=allocAndCheck<double>(nj);
 
     //debug purpose
 
@@ -192,7 +209,6 @@ bool embObjMotionControl::dealloc()
     delete _velocityShifts;
     delete _velocityTimeout;
 
-    // Reserve space for data stored locally. values are initialize to 0
     delete _ref_positions;
     delete _command_speeds;
     delete _ref_speeds;
@@ -201,6 +217,8 @@ bool embObjMotionControl::dealloc()
     delete _enabledAmp;
     delete _enabledPid;
     delete _calibrated;
+    checkAndDestroy<double>(_maxStep);
+
 
 #ifdef _SETPOINT_TEST_
     delete j_debug_data;
@@ -419,6 +437,8 @@ bool embObjMotionControl::open(yarp::os::Searchable &config)
     ImplementImpedanceControl::initialize(_njoints, _axisMap, _angleToEncoder, _zeros, _newtonsToSensor);
     ImplementTorqueControl::initialize(_njoints, _axisMap, _angleToEncoder, _zeros, _newtonsToSensor);
     ImplementPositionDirect::initialize(_njoints, _axisMap, _angleToEncoder, _zeros);
+    _axisPositionDirectHelper = new axisPositionDirectHelper(_njoints, _axisMap, _angleToEncoder, _maxStep);
+
 
     /*
     *  Once I'm sure every input data required is present and correct, instantiate the EMS, transceiver etc...
@@ -707,6 +727,25 @@ bool embObjMotionControl::fromConfig(yarp::os::Searchable &config)
         return false;
     else
         for(i=1; i<xtmp.size(); i++) _limitsMin[i-1]=xtmp.get(i).asDouble();
+
+    if (!extractGroup(limits, xtmp, "maxPosStep", "the maximum amplitude of a position direct step", _njoints))
+    {
+        fprintf(stderr, "Using default MaxPosStep=10 degs\n");
+        for(i=1; i<_njoints; i++)  // in case of error use the _njoints, because xtmp.size could be wrong
+            _maxStep[i-1] = 10;    //Default value
+    }
+    else
+    {
+        for(i=1; i<xtmp.size(); i++)
+        {
+            _maxStep[i-1] = xtmp.get(i).asDouble();
+            if (_maxStep[i-1] < 0)
+            {
+                fprintf(stderr,"ERROR: Invalid MaxPosStep parameter <0\n");
+                return false;
+            }
+        }
+    }
 
     /////// [VELOCITY]
     Bottle &velocityGroup=config.findGroup("VELOCITY");
@@ -2929,7 +2968,18 @@ bool embObjMotionControl::setPositionRaw(int j, double ref)
 {
     // needs to send both position and velocit as well as positionMove
     // does the same as setReferenceRaw, with some more misterious (missing) checks.
-	return setReferenceRaw(j, ref);
+    double currentPos;
+    if (fabs(ref - getEncoderRaw(j, &currentPos)) < _axisPositionDirectHelper->getMaxHwStep(j))
+    {
+        return setReferenceRaw(j, ref);
+    }
+    else
+    {
+        yWarning() << "embObjMotionControl: skipping setPosition() on " << _fId.name << " , joint " << j;
+        //double saturated_cmd = _axisPositionDirectHelper->getSaturatedValue(j,r._bcastRecvBuffer[j]._position_joint._value,ref);
+        //_writeDWord (CAN_SET_COMMAND_POSITION, j, S_32(saturated_cmd));
+        return false;
+    }
 }
 
 bool embObjMotionControl::setPositionsRaw(const int n_joint, const int *joints, double *refs)

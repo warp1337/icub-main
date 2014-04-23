@@ -80,6 +80,13 @@ using namespace std;
 
 #include "eoRequestsQueue.hpp"
 #include "EoMotionControl.h"
+
+namespace iCub {
+    namespace embObj {
+        class axisPositionDirectHelper;
+    }
+}
+
 //
 //   Help structure
 //
@@ -155,6 +162,32 @@ struct SpeedEstimationParameters
     }
 };
 
+// helper to check if the postionDirect is sending a step too big
+
+class iCub::embObj::axisPositionDirectHelper
+{
+    int  jointsNum;
+    double* maxHwStep;
+    double* maxUserStep;
+    ControlBoardHelper* helper;
+
+    public:
+    axisPositionDirectHelper(int njoints, const int *aMap, const double *angToEncs, double* _maxStep);
+
+    inline ~axisPositionDirectHelper()
+    {
+        delete [] maxHwStep;
+        maxHwStep=0;
+        delete [] maxUserStep;
+        maxUserStep=0;
+        delete helper;
+        helper = 0;
+    }
+
+    inline double getMaxHwStep (int j) {return maxHwStep[j];}
+    inline double getMaxUserStep (int j) {return maxUserStep[j];}
+    inline double getSaturatedValue (int j, double curr_value, double ref_value);
+};
 #undef IMPLEMENT_DEBUG_INTERFACE
 
 #ifdef _SETPOINT_TEST_
@@ -232,6 +265,9 @@ private:
     Pid *_tpids;                                /** initial torque gains */
     bool _tpidsEnabled;                         /** abilitation for torque gains */
     SpeedEstimationParameters *_estim_params;   /** parameters for speed/acceleration estimation */
+    double *_maxStep;                           /** max size of a positionDirect step */
+    iCub::embObj::axisPositionDirectHelper  *_axisPositionDirectHelper;   /* helper to check step size in positionDirect interface */
+
     //  DebugParameters *_debug_params;             /** debug parameters */
 
     ImpedanceLimits     *_impedance_limits;     /** impedancel imits */
