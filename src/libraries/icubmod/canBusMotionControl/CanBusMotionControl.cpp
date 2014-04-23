@@ -1641,13 +1641,6 @@ bool CanBusMotionControlParameters::alloc(int nj)
     _optical_factor=allocAndCheck<double>(nj);
     _velocityShifts=allocAndCheck<int>(CAN_MAX_CARDS);
     _velocityTimeout=allocAndCheck<int>(CAN_MAX_CARDS);
-    memset(_limitsMin, 0, sizeof(double)*nj);
-    memset(_limitsMax, 0, sizeof(double)*nj);
-    memset(_currentLimits, 0, sizeof(double)*nj);
-    memset(_velocityShifts, 0, sizeof(int)*nj);
-    memset(_optical_factor, 0, sizeof(double)*nj);
-    memset(_velocityTimeout, 0, sizeof(int)*nj);
-    memset(_maxStep, 0, sizeof(double)*nj);
 
     _my_address = 0;
     _polling_interval = 10;
