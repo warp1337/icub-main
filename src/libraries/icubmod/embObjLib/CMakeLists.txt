@@ -31,7 +31,7 @@ endif(ICUB_EOPROT_DEFINED_BY_XML)
 if(ICUB_COMPILE_EMBOBJ_LIBRARY)
 #--------------------------------------------------------#
 # download embObjlib from firmware repository
-include(updateSVNrepository.cmake)
+#include(updateSVNrepository.cmake)
 #--------------------------------------------------------#
 
 
@@ -55,10 +55,12 @@ set(ICUB_INTERFACE_SOURCE   ${EXTRA_FOLDER}/FeatureInterface.cpp)
 
 if(ICUB_EOPROT_DEFINED_BY_XML)
 
-set(NVS_EB_SOURCE           
-                            )
+message(INFO " using ICUB_EOPROT_DEFINED_BY_XML")
+set(NVS_EB_SOURCE           )
 
 else(ICUB_EOPROT_DEFINED_BY_XML)
+
+message(WARN " NOT using ICUB_EOPROT_DEFINED_BY_XML!!! WARNING")
 
 set(NVS_EB_SOURCE           ${NVS_EB_SRC_FOLDER}eOprot_b01.c  
                             ${NVS_EB_SRC_FOLDER}eOprot_b02.c
@@ -73,7 +75,6 @@ set(NVS_EB_SOURCE           ${NVS_EB_SRC_FOLDER}eOprot_b01.c
                             ${NVS_EB_SRC_FOLDER}eOprot_b11.c  
                             )
 
-endif(ICUB_EOPROT_DEFINED_BY_XML)
 
 set(NVS_SOURCE              ${NVS_MC_SRC_FOLDER}/EoProtocol.c
                             ${NVS_MC_SRC_FOLDER}/EoProtocolEPs.c
@@ -92,19 +93,10 @@ set(NVS_SENSORS_SOURCE      ${NVS_SENSORS_SRC_FOLDER}EoProtocolAS_fun.c
                             ${NVS_SENSORS_SRC_FOLDER}EoProtocolAS_rom.c
                             )
 
-#SET_SOURCE_FILES_PROPERTIES( ${NVS_SKIN_CBK_FOLDER}eOcfg_nvsEP_sk_usrcbk_ebx.c PROPERTIES LANGUAGE CXX )
-
 set(NVS_SKIN_SOURCE         ${NVS_SKIN_SRC_FOLDER}EoProtocolSK_fun.c
                             ${NVS_SKIN_SRC_FOLDER}EoProtocolSK_rom.c
                             )
 
-
-
-set(NVS_CBK_SOURCE          ${NVS_MNGMNT_CBK_FOLDER}embObjLib_mngmnt_callback.c
-                            ${NVS_MC_CBK_FOLDER}embObjMotionControl_callback.c
-                            ${NVS_SENSORS_CBK_FOLDER}embObjAnalogSensor_callback.c
-                            ${NVS_SKIN_CBK_FOLDER}/eOcfg_nvsEP_sk_usrcbk_ebx.c 
-                            )
 
 
 # EmbObj-src
@@ -195,7 +187,14 @@ set(PROT_HEADER             ${PROT_FOLDER}/transport/EOhostTransceiver_hid.h
                             ${PROT_FOLDER}/transport/EOtransmitter_hid.h
                             ${PROT_FOLDER}/transport/EOprotocolConfigurator_hid.h
                             )
+endif(ICUB_EOPROT_DEFINED_BY_XML)
 
+
+set(NVS_CBK_SOURCE          ${NVS_MNGMNT_CBK_FOLDER}embObjLib_mngmnt_callback.c
+                            ${NVS_MC_CBK_FOLDER}embObjMotionControl_callback.c
+                            ${NVS_SENSORS_CBK_FOLDER}embObjAnalogSensor_callback.c
+                            ${NVS_SKIN_CBK_FOLDER}/eOcfg_nvsEP_sk_usrcbk_ebx.c
+                            )
 
 set(EXTRA_SOURCE            ${EXTRA_FOLDER}/hostTransceiver.cpp
                             ${EXTRA_FOLDER}/ethManager.cpp
@@ -207,18 +206,18 @@ set(DEBUG_SOURCE            ${DEBUG_FOLDER}/eODeb_eoProtoParser.c
 
 
 set(embobj_source       
-                            ${CORE_FOLDER_SOURCE} 
-                            ${CORE_VEE_SOURCE}  
-                            ${PROT_SOURCE}  
+#                            ${CORE_FOLDER_SOURCE}
+#                            ${CORE_VEE_SOURCE}
+#                            ${PROT_SOURCE}
                             ${EXTRA_SOURCE}
-                            ${PROT_FOLDER}
-                            ${NVS_EB_SOURCE} 
-                            ${NVS_SOURCE}
-                            ${NVS_MC_SOURCE} 
-                            ${NVS_MNGMNT_SOURCE} 
-                            ${NVS_SENSORS_SOURCE} 
-                            ${NVS_SKIN_SOURCE} 
-                            ${NVS_USR_SOURCE} 
+#                            ${PROT_FOLDER}
+#                            ${NVS_EB_SOURCE}
+#                            ${NVS_SOURCE}
+#                            ${NVS_MC_SOURCE}
+#                            ${NVS_MNGMNT_SOURCE}
+#                            ${NVS_SENSORS_SOURCE}
+#                            ${NVS_SKIN_SOURCE}
+#                            ${NVS_USR_SOURCE}
                             ${NVS_CBK_SOURCE}
                             ${ICUB_INTERFACE_SOURCE}
                             )
@@ -232,19 +231,24 @@ set(embobj_header           ${BODY_COMMON_SOURCE}
 
 
 SOURCE_GROUP("EmbObj Source Files" FILES ${embobj_source})
-SOURCE_GROUP("EmbObj Header Files" FILES ${embobj_header})
+#SOURCE_GROUP("EmbObj Header Files" FILES ${embobj_header})
   
 include_directories(   
                             ${CMAKE_CURRENT_SOURCE_DIR}
-                            ${embObj_includes}
+#                            ${embObj_includes}
                             ${iCubDev_INCLUDE_DIRS}
                             ${YARP_INCLUDE_DIRS}
                             )
   
-add_library(${PROJECTNAME} ${embobj_source} ${embobj_header})
+add_library(${PROJECTNAME} ${embobj_source} ) #${embobj_header})
 
+message("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+message(" icub_firmware_shared_embobj_LIBRARIES is ${icub_firmware_shared_embobj_LIBRARIES}")
+message(" embobj_source is ${embobj_source} ")
+message("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 #add_dependencies(${PROJECTNAME} eBcode-download)
-TARGET_LINK_LIBRARIES(${PROJECTNAME} debugStream ${YARP_LIBRARIES} ${ACE_LIBRARIES} )  
+TARGET_LINK_LIBRARIES(${PROJECTNAME}  ${icub_firmware_shared_embobj_LIBRARIES} debugStream ${YARP_LIBRARIES} ${ACE_LIBRARIES} )
+#TARGET_LINK_LIBRARIES(${PROJECTNAME}  /usr/local/src/robot//firmware/icub-firmware-shared/build/eth/libembObj_Core.a debugStream ${YARP_LIBRARIES} ${ACE_LIBRARIES} )
 
 icub_export_library(${PROJECTNAME})
 
