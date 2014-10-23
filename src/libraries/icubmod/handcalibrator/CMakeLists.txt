@@ -12,5 +12,6 @@ yarp_add_plugin(handcalibrator iCubHandCalibrator.cpp iCubHandCalibrator.h)
 target_link_libraries(handcalibrator ${YARP_LIBRARIES})
 
 icub_export_library(handcalibrator)
-    
+yarp_install(FILES icubhandcalibrator_manifest.ini  DESTINATION ${ICUB_PLUGIN_MANIFESTS_INSTALL_DIR})
+
 endif(NOT SKIP_icubhandcalibrator)

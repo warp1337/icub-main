@@ -27,4 +27,14 @@ IF (NOT SKIP_icubarmcalibratorj8 OR NOT SKIP_icubarmcalibrator OR NOT SKIP_DFKI_
 
 endif (NOT SKIP_icubarmcalibratorj8 OR NOT SKIP_icubarmcalibrator OR NOT SKIP_DFKI_hand_calibrator)
 
+if(NOT SKIP_icubarmcalibrator)
+    yarp_install(FILES icubarmcalibrator_manifest.ini  DESTINATION ${ICUB_PLUGIN_MANIFESTS_INSTALL_DIR})
+endif(NOT SKIP_icubarmcalibrator)
 
+if(NOT SKIP_icubarmcalibratorj8)
+    yarp_install(FILES icubarmcalibratorj8_manifest.ini  DESTINATION ${ICUB_PLUGIN_MANIFESTS_INSTALL_DIR})
+endif(NOT SKIP_icubarmcalibratorj8)
+
+if(NOT SKIP_DFKI_hand_calibrator)
+    yarp_install(FILES DFKI_hand_calibrator_manifest.ini  DESTINATION ${ICUB_PLUGIN_MANIFESTS_INSTALL_DIR})
+endif(NOT SKIP_DFKI_hand_calibrator)

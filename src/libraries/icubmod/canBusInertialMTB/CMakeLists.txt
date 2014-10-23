@@ -15,6 +15,7 @@ yarp_add_plugin(canBusInertialMTB CanBusInertialMTB.h CanBusInertialMTB.cpp)
 target_link_libraries(canBusInertialMTB ${YARP_LIBRARIES})
 
 icub_export_library(canBusInertialMTB)
+yarp_install(FILES canBusInertialMTB_manifest.ini  DESTINATION ${ICUB_PLUGIN_MANIFESTS_INSTALL_DIR})
 
 else(ICUB_HAS_icub_firmware_shared)
   message(ERROR " canBusInertialMTB: cannot find icub_firmware_shared library, turn off device
